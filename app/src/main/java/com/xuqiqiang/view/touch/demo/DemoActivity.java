@@ -57,7 +57,7 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
         mDeleteView = findViewById(R.id.ll_delete);
         mRecyclerTouchHelper = new RecyclerTouchHelper(mRecyclerView);
         // 重排序
-//        mRecyclerTouchHelper.setResort(true);
+        mRecyclerTouchHelper.setResort(true);
         mRecyclerTouchHelper.setAdapter(new TouchAdapter());
     }
 

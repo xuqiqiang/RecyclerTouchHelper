@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
@@ -18,22 +19,21 @@ public class DemoAdapter extends RecyclerView.Adapter<DemoAdapter.ViewHolder> {
 
     private List<Subject> mList;
     private Context mContext;
-    private LayoutInflater mLiLayoutInflater;
 
     public DemoAdapter(Context context, List<Subject> list) {
         this.mList = list;
         this.mContext = context;
-        this.mLiLayoutInflater = LayoutInflater.from(mContext);
     }
 
+    @NonNull
     @Override
-    public DemoAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        return new ViewHolder(mLiLayoutInflater.inflate(R.layout.item_grid, parent, false));
+    public DemoAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        return new ViewHolder(LayoutInflater.from(mContext).inflate(R.layout.item_grid, parent, false));
     }
 
     @Override
     public void onBindViewHolder(DemoAdapter.ViewHolder holder, int position) {
-        holder.tvTitle.setText("item" + position);
+        holder.tvTitle.setText(mList.get(position).getTitle());
         holder.ivImg.setImageResource(mList.get(position).getImg());
     }
 
@@ -42,7 +42,7 @@ public class DemoAdapter extends RecyclerView.Adapter<DemoAdapter.ViewHolder> {
         return mList == null ? 0 : mList.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle;
         ImageView ivImg;
 

@@ -54,11 +54,12 @@ public class RecyclerTouchHelper {
             private ObjectAnimator mObjectAnimator;
 
             @Override
-            public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+            public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
                 RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
                 int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN |
                         ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
 
+                //noinspection StatementWithEmptyBody
                 if (layoutManager instanceof GridLayoutManager) {
                     // ignore
                 } else if (layoutManager instanceof LinearLayoutManager) {
@@ -71,7 +72,8 @@ public class RecyclerTouchHelper {
             }
 
             @Override
-            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) {
                 if (!mResort) return true;
                 int fromPosition = viewHolder.getAdapterPosition();
                 int toPosition = target.getAdapterPosition();
@@ -81,7 +83,7 @@ public class RecyclerTouchHelper {
             }
 
             @Override
-            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
             }
 
             @Override
@@ -136,9 +138,11 @@ public class RecyclerTouchHelper {
             }
 
             @Override
-            public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+            @SuppressWarnings("rawtypes")
+            public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
                 super.clearView(recyclerView, viewHolder);
-                mRecyclerView.getAdapter().notifyDataSetChanged();
+                RecyclerView.Adapter adapter = mRecyclerView.getAdapter();
+                if (adapter != null) adapter.notifyDataSetChanged();
             }
         });
         mItemTouchHelper.attachToRecyclerView(mRecyclerView);
@@ -193,6 +197,7 @@ public class RecyclerTouchHelper {
 
         public abstract void onRequestDelete(RecyclerView.ViewHolder viewHolder, OnDeleteCallback callback);
 
+        @SuppressWarnings("unused")
         public boolean isEnabled(RecyclerView.ViewHolder viewHolder) {
             return true;
         }
@@ -205,7 +210,8 @@ public class RecyclerTouchHelper {
             if (Utils.isEmpty(mDataList)) return false;
             if (viewHolder.getAdapterPosition() == mDataList.size() - 1) {
                 mDataList.remove(mDataList.size() - 1);
-                recyclerView.getAdapter().notifyDataSetChanged();
+                RecyclerView.Adapter adapter = recyclerView.getAdapter();
+                if (adapter != null) adapter.notifyDataSetChanged();
             } else {
                 onItemMove(viewHolder.getAdapterPosition(), mDataList.size() - 1);
                 viewHolder.itemView.setVisibility(View.INVISIBLE);
@@ -213,7 +219,8 @@ public class RecyclerTouchHelper {
                     @Override
                     public void run() {
                         mDataList.remove(mDataList.size() - 1);
-                        recyclerView.getAdapter().notifyDataSetChanged();
+                        RecyclerView.Adapter adapter = recyclerView.getAdapter();
+                        if (adapter != null) adapter.notifyDataSetChanged();
                     }
                 }, 300);
             }
@@ -241,7 +248,8 @@ public class RecyclerTouchHelper {
                     Collections.swap(mDataList, i, i - 1);
                 }
             }
-            recyclerView.getAdapter().notifyItemMoved(fromPosition, toPosition);
+            RecyclerView.Adapter adapter = recyclerView.getAdapter();
+            if (adapter != null) adapter.notifyItemMoved(fromPosition, toPosition);
         }
     }
 }
