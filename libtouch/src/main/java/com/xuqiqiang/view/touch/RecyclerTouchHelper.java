@@ -48,7 +48,7 @@ public class RecyclerTouchHelper {
             @Override
             public void onItemLongClick(int position, RecyclerView.ViewHolder vh) {
                 if (mAdapter != null && mAdapter.isEnabled(vh)) {
-                    mFromPosition = vh.getAdapterPosition();
+                    mFromPosition = mAdapter.getItemPosition(vh);
                     mCurPosition = -1;
                     mItemTouchHelper.startDrag(vh);
                     Vibrator vib = (Vibrator) mContext.getSystemService(Service.VIBRATOR_SERVICE);
@@ -82,9 +82,9 @@ public class RecyclerTouchHelper {
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder,
                                   @NonNull RecyclerView.ViewHolder target) {
                 if (!mResort) return true;
-                int fromPosition = viewHolder.getAdapterPosition();
-                int toPosition = target.getAdapterPosition();
                 if (mAdapter != null) {
+                    int fromPosition = mAdapter.getItemPosition(viewHolder);
+                    int toPosition = mAdapter.getItemPosition(target);
                     toPosition = mAdapter.onItemMove(fromPosition, toPosition);
                     if (toPosition >= 0)
                         mCurPosition = toPosition;
@@ -227,6 +227,10 @@ public class RecyclerTouchHelper {
         public void onResort() {
         }
 
+        public int getItemPosition(RecyclerView.ViewHolder viewHolder) {
+            return viewHolder.getAdapterPosition();
+        }
+
         public float getTouchScale() {
             return TOUCH_SCALE;
         }
@@ -259,10 +263,10 @@ public class RecyclerTouchHelper {
                     }, 100);
                 }
             };
-            if (viewHolder.getAdapterPosition() == mDataList.size() - 1) {
+            if (getItemPosition(viewHolder) == mDataList.size() - 1) {
                 deleteEvent.run();
             } else {
-                onItemMove(viewHolder.getAdapterPosition(), mDataList.size() - 1);
+                onItemMove(getItemPosition(viewHolder), mDataList.size() - 1);
                 viewHolder.itemView.setVisibility(View.INVISIBLE);
                 mHandler.postDelayed(deleteEvent, 300);
             }

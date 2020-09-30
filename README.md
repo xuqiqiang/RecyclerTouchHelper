@@ -18,7 +18,7 @@ allprojects {
 }
 
 dependencies {
-	implementation 'com.github.xuqiqiang:RecyclerTouchHelper:1.0.2'
+	implementation 'com.github.xuqiqiang:RecyclerTouchHelper:1.0.3'
 }
 ```
 
