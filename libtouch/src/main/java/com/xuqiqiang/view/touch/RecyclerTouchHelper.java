@@ -1,7 +1,6 @@
 package com.xuqiqiang.view.touch;
 
 import android.animation.ObjectAnimator;
-import android.animation.PropertyValuesHolder;
 import android.app.Service;
 import android.content.Context;
 import android.os.Handler;
@@ -19,10 +18,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.Collections;
 import java.util.List;
 
+import static android.animation.PropertyValuesHolder.ofFloat;
+
 /**
  * Created by xuqiqiang on 2020/09/07.
  */
 public class RecyclerTouchHelper {
+
+    private static final float TOUCH_SCALE = 1.1f;
+    private static final float TOUCH_ALPHA = 0.7f;
 
     private Context mContext;
     private RecyclerView mRecyclerView;
@@ -101,35 +105,35 @@ public class RecyclerTouchHelper {
             public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
                 if (actionState != ItemTouchHelper.ACTION_STATE_IDLE) {
                     mSelectViewHolder = viewHolder;
-                    if (mObjectAnimator != null && mObjectAnimator.isRunning()) {
-                        mObjectAnimator.cancel();
-                    }
-
-                    PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat("scaleX", 1f, 1.1f);
-                    PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat("scaleY", 1f, 1.1f);
-                    PropertyValuesHolder alpha = PropertyValuesHolder.ofFloat("alpha", 1f, 0.7f);
-                    mObjectAnimator = ObjectAnimator.ofPropertyValuesHolder(viewHolder.itemView,
-                            scaleX, scaleY, alpha);
-                    mObjectAnimator.setDuration(300);
-                    mObjectAnimator.start();
                     if (mAdapter != null) {
+                        if (mObjectAnimator != null && mObjectAnimator.isRunning()) {
+                            mObjectAnimator.cancel();
+                        }
+
+                        mObjectAnimator = ObjectAnimator.ofPropertyValuesHolder(viewHolder.itemView,
+                                ofFloat("scaleX", 1f, mAdapter.getTouchScale()),
+                                ofFloat("scaleY", 1f, mAdapter.getTouchScale()),
+                                ofFloat("alpha", 1f, mAdapter.getTouchAlpha()));
+                        mObjectAnimator.setDuration(300);
+                        mObjectAnimator.start();
+
                         View deleteView = mAdapter.getDeleteView();
                         if (deleteView != null)
                             deleteView.setVisibility(View.VISIBLE);
                     }
                 } else {
                     if (mSelectViewHolder != null) {
-                        if (mObjectAnimator != null && mObjectAnimator.isRunning()) {
-                            mObjectAnimator.cancel();
+                        if (mObjectAnimator != null) {
+                            if (mObjectAnimator.isRunning()) {
+                                mObjectAnimator.cancel();
+                            }
+                            mObjectAnimator = ObjectAnimator.ofPropertyValuesHolder(mSelectViewHolder.itemView,
+                                    ofFloat("scaleX", 1f),
+                                    ofFloat("scaleY", 1f),
+                                    ofFloat("alpha", 1f));
+                            mObjectAnimator.setDuration(300);
+                            mObjectAnimator.start();
                         }
-
-                        PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat("scaleX", 1f);
-                        PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat("scaleY", 1f);
-                        PropertyValuesHolder alpha = PropertyValuesHolder.ofFloat("alpha", 1f);
-                        mObjectAnimator = ObjectAnimator.ofPropertyValuesHolder(mSelectViewHolder.itemView,
-                                scaleX, scaleY, alpha);
-                        mObjectAnimator.setDuration(300);
-                        mObjectAnimator.start();
                         mSelectViewHolder = null;
                         if (mAdapter != null) {
                             View deleteView = mAdapter.getDeleteView();
@@ -221,6 +225,14 @@ public class RecyclerTouchHelper {
         }
 
         public void onResort() {
+        }
+
+        public float getTouchScale() {
+            return TOUCH_SCALE;
+        }
+
+        public float getTouchAlpha() {
+            return TOUCH_ALPHA;
         }
 
         public boolean onDelete(final RecyclerView.ViewHolder viewHolder, final Runnable event) {
