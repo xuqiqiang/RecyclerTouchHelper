@@ -34,9 +34,8 @@ public class RecyclerTouchHelper {
     private int mCurPosition;
 
     public RecyclerTouchHelper(RecyclerView recyclerView) {
-        this.mRecyclerView = recyclerView;
-        this.mContext = recyclerView.getContext();
-
+        mRecyclerView = recyclerView;
+        mContext = recyclerView.getContext();
         mRecyclerView.addOnItemTouchListener(new OnRecyclerItemClickListener(mRecyclerView) {
             @Override
             public void onItemClick(int position, RecyclerView.ViewHolder vh) {
@@ -167,23 +166,25 @@ public class RecyclerTouchHelper {
     }
 
     public boolean dispatchTouchEvent(@NonNull final TouchListener listener, final MotionEvent e) {
-//        Logger.d("dispatchTouchEvent curX:" + e.getX() + "curY:" + e.getY());
         if (mAdapter == null || mSelectViewHolder == null)
-            return false;//return listener.dispatchTouchEvent(e);
+            return false;
         View deleteView = mAdapter.getDeleteView();
-        if (deleteView == null) return false;//return listener.dispatchTouchEvent(e);
+        if (deleteView == null) return false;
         if (e.getAction() == MotionEvent.ACTION_UP &&
                 Utils.isInViewZone(deleteView, (int) e.getX(), (int) e.getY())) {
             mAdapter.onRequestDelete(mSelectViewHolder, new OnDeleteCallback() {
                 @Override
                 public void onDelete(boolean isDelete) {
-                    if (isDelete && mAdapter.onDelete(mSelectViewHolder))
+                    Runnable cancelEvent = new Runnable() {
+                        @Override
+                        public void run() {
+                            e.setAction(MotionEvent.ACTION_CANCEL);
+                            listener.dispatchTouchEvent(e);
+                        }
+                    };
+                    if (isDelete && mAdapter.onDelete(mSelectViewHolder, cancelEvent))
                         return;
-//                    e.setLocation(e.getX(), 0);
-//                    e.setAction(MotionEvent.ACTION_DOWN);
-
-                    e.setAction(MotionEvent.ACTION_CANCEL);
-                    listener.dispatchTouchEvent(e);
+                    cancelEvent.run();
                     restoreSequence();
                 }
             });
@@ -195,12 +196,6 @@ public class RecyclerTouchHelper {
     private void restoreSequence() {
         if (mCurPosition >= 0 && mFromPosition >= 0 && mCurPosition != mFromPosition) {
             mAdapter.onItemMove(mCurPosition, mFromPosition);
-//            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-//                @Override
-//                public void run() {
-//                    mAdapter.onItemMove(mCurPosition, mFromPosition);
-//                }
-//            }, 200);
         }
     }
 
@@ -212,6 +207,7 @@ public class RecyclerTouchHelper {
     public abstract static class Adapter {
 
         private RecyclerView recyclerView;
+        private Handler mHandler = new Handler(Looper.getMainLooper());
 
         public abstract List getDataList();
 
@@ -227,26 +223,36 @@ public class RecyclerTouchHelper {
         public void onResort() {
         }
 
-        public boolean onDelete(RecyclerView.ViewHolder viewHolder) {
+        public boolean onDelete(final RecyclerView.ViewHolder viewHolder, final Runnable event) {
             final List mDataList = getDataList();
             if (Utils.isEmpty(mDataList)) return false;
+            Runnable deleteEvent = new Runnable() {
+                @Override
+                public void run() {
+                    event.run();
+                    mHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            mDataList.remove(mDataList.size() - 1);
+                            RecyclerView.Adapter adapter = recyclerView.getAdapter();
+                            if (adapter != null)
+                                adapter.notifyItemRemoved(mDataList.size());
+                            mHandler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    viewHolder.itemView.setVisibility(View.VISIBLE);
+                                }
+                            }, 200);
+                        }
+                    }, 100);
+                }
+            };
             if (viewHolder.getAdapterPosition() == mDataList.size() - 1) {
-                mDataList.remove(mDataList.size() - 1);
-                RecyclerView.Adapter adapter = recyclerView.getAdapter();
-                if (adapter != null) adapter.notifyDataSetChanged();
-//                    adapter.notifyItemRemoved(mDataList.size() - 1);
+                deleteEvent.run();
             } else {
                 onItemMove(viewHolder.getAdapterPosition(), mDataList.size() - 1);
                 viewHolder.itemView.setVisibility(View.INVISIBLE);
-                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        mDataList.remove(mDataList.size() - 1);
-                        RecyclerView.Adapter adapter = recyclerView.getAdapter();
-                        if (adapter != null) adapter.notifyDataSetChanged();
-//                            adapter.notifyItemRemoved(mDataList.size() - 1);
-                    }
-                }, 300);
+                mHandler.postDelayed(deleteEvent, 300);
             }
             return true;
         }
@@ -276,24 +282,5 @@ public class RecyclerTouchHelper {
             if (adapter != null) adapter.notifyItemMoved(fromPosition, toPosition);
             return toPosition;
         }
-
-//        private void restoreSequence(int fromPosition, int toPosition) {
-////        int fromPosition = mFromPosition;
-////        int toPosition = mCurPosition;
-//            List mDataList = getDataList();
-//            if (Utils.isEmpty(mDataList)) return;
-//
-//            if (fromPosition < toPosition) {
-//                for (int i = toPosition; i > fromPosition; i--) {
-//                    Collections.swap(mDataList, i, i - 1);
-//                }
-//            } else {
-//                for (int i = fromPosition; i > toPosition; i--) {
-//                    Collections.swap(mDataList, i, i - 1);
-//                }
-//            }
-//            RecyclerView.Adapter adapter = recyclerView.getAdapter();
-//            if (adapter != null) adapter.notifyItemMoved(fromPosition, toPosition);
-//        }
     }
 }
