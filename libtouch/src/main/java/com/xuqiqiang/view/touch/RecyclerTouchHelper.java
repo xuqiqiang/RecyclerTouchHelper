@@ -152,7 +152,19 @@ public class RecyclerTouchHelper {
             public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
                 super.clearView(recyclerView, viewHolder);
                 RecyclerView.Adapter adapter = mRecyclerView.getAdapter();
-                if (adapter != null) adapter.notifyDataSetChanged();
+                if (adapter != null) {
+                    if (mRecyclerView.isComputingLayout()) {
+                        mRecyclerView.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                RecyclerView.Adapter adapter = mRecyclerView.getAdapter();
+                                if (adapter != null) adapter.notifyDataSetChanged();
+                            }
+                        });
+                    } else {
+                        adapter.notifyDataSetChanged();
+                    }
+                }
             }
         });
         mItemTouchHelper.attachToRecyclerView(mRecyclerView);
