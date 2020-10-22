@@ -15,13 +15,13 @@ import java.util.List;
  */
 public abstract class BaseRecyclerAdapter<T> extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    public static final int TYPE_HEADER = 0;
-    public static final int TYPE_NORMAL = 1;
+    public static final int TYPE_NORMAL = 0;
+    public static final int TYPE_HEADER = 1;
+    public static final int TYPE_FOOTER = 2;
 
-    protected List<T> mDatas;// = new ArrayList<>();
-
+    protected List<T> mData;
     private View mHeaderView;
-
+    private View mFootView;
     private OnItemClickListener mListener;
 
     public void setOnItemClickListener(OnItemClickListener li) {
@@ -37,31 +37,41 @@ public abstract class BaseRecyclerAdapter<T> extends RecyclerView.Adapter<Recycl
         notifyItemInserted(0);
     }
 
-    public void addDatas(ArrayList<T> datas) {
-        mDatas.addAll(datas);
+    public View getFootView() {
+        return mFootView;
+    }
+
+    public void setFootView(View footView) {
+        this.mFootView = footView;
+        notifyItemInserted(getItemCount() - 1);
+    }
+
+    public void addData(ArrayList<T> data) {
+        mData.addAll(data);
         notifyDataSetChanged();
     }
 
     @Override
     public int getItemViewType(int position) {
-        if (mHeaderView == null) return TYPE_NORMAL;
-        if (position == 0) return TYPE_HEADER;
+        if (position == 0 && mHeaderView != null) return TYPE_HEADER;
+        if (position == getItemCount() - 1 && mFootView != null) return TYPE_FOOTER;
         return TYPE_NORMAL;
     }
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, final int viewType) {
         if (mHeaderView != null && viewType == TYPE_HEADER) return new Holder(mHeaderView);
+        if (mFootView != null && viewType == TYPE_FOOTER) return new Holder(mFootView);
         return onCreate(parent, viewType);
     }
 
-
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder viewHolder, int position) {
-        if (getItemViewType(position) == TYPE_HEADER) return;
+        int type = getItemViewType(position);
+        if (type == TYPE_HEADER || type == TYPE_FOOTER) return;
 
         final int pos = getRealPosition(viewHolder);
-        final T data = mDatas.get(pos);
+        final T data = mData.get(pos);
         onBind(viewHolder, pos, data);
 
         if (mListener != null) {
@@ -84,7 +94,8 @@ public abstract class BaseRecyclerAdapter<T> extends RecyclerView.Adapter<Recycl
             gridManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
                 @Override
                 public int getSpanSize(int position) {
-                    return getItemViewType(position) == TYPE_HEADER
+                    int type = getItemViewType(position);
+                    return type == TYPE_HEADER || type == TYPE_FOOTER
                             ? gridManager.getSpanCount() : 1;
                 }
             });
@@ -95,8 +106,7 @@ public abstract class BaseRecyclerAdapter<T> extends RecyclerView.Adapter<Recycl
     public void onViewAttachedToWindow(RecyclerView.ViewHolder holder) {
         super.onViewAttachedToWindow(holder);
         ViewGroup.LayoutParams lp = holder.itemView.getLayoutParams();
-        if (lp != null
-                && lp instanceof StaggeredGridLayoutManager.LayoutParams) {
+        if (lp instanceof StaggeredGridLayoutManager.LayoutParams) {
             StaggeredGridLayoutManager.LayoutParams p = (StaggeredGridLayoutManager.LayoutParams) lp;
             p.setFullSpan(holder.getLayoutPosition() == 0);
         }
@@ -109,7 +119,10 @@ public abstract class BaseRecyclerAdapter<T> extends RecyclerView.Adapter<Recycl
 
     @Override
     public int getItemCount() {
-        return mHeaderView == null ? mDatas.size() : mDatas.size() + 1;
+        int count = mData == null ? 0 : mData.size();
+        if (mHeaderView != null) count += 1;
+        if (mFootView != null) count += 1;
+        return count;
     }
 
     public abstract RecyclerView.ViewHolder onCreate(ViewGroup parent, final int viewType);
