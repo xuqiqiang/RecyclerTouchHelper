@@ -83,7 +83,8 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
             mRecyclerView.setLayoutManager(new LinearLayoutManager(this,
                     RecyclerView.VERTICAL, false));
         }
-        mAdapter = new DemoAdapter(mList, isGrid);
+
+        mAdapter = new NotLinearAdapter(mList, isGrid);
         if (hasHeader) {
             View header = LayoutInflater.from(this).inflate(R.layout.item_header, mRecyclerView, false);
             mAdapter.setHeaderView(header);
@@ -94,7 +95,8 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
         mAdapter.setOnItemClickListener(new BaseRecyclerAdapter.OnItemClickListener<Subject>() {
             @Override
             public void onItemClick(int position, Subject data) {
-                showMessage(DemoActivity.this, data.getTitle());
+                if (data != null)
+                    showMessage(DemoActivity.this, data.getTitle());
             }
         });
     }

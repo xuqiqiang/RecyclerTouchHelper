@@ -71,7 +71,7 @@ public abstract class BaseRecyclerAdapter<T> extends RecyclerView.Adapter<Recycl
         if (type == TYPE_HEADER || type == TYPE_FOOTER) return;
 
         final int pos = getRealPosition(viewHolder);
-        final T data = mData.get(pos);
+        final T data = pos >= 0 && pos < mData.size() ? mData.get(pos) : null;
         onBind(viewHolder, pos, data);
 
         if (mListener != null) {
@@ -113,7 +113,7 @@ public abstract class BaseRecyclerAdapter<T> extends RecyclerView.Adapter<Recycl
     }
 
     public int getRealPosition(RecyclerView.ViewHolder holder) {
-        int position = holder.getLayoutPosition();
+        int position = holder.getAdapterPosition();
         return mHeaderView == null ? position : position - 1;
     }
 
