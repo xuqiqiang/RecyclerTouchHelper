@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -64,7 +65,12 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
             mRecyclerView.setLayoutManager(new LinearLayoutManager(this,
                     RecyclerView.VERTICAL, false));
         }
-        mRecyclerView.setAdapter(new DemoAdapter(this, mList, isGrid));
+        DemoAdapter adapter = new DemoAdapter(this, mList, isGrid);
+
+        View header = LayoutInflater.from(this).inflate(R.layout.item_header, mRecyclerView, false);
+        adapter.setHeaderView(header);
+
+        mRecyclerView.setAdapter(adapter);
     }
 
     private void initTouch() {
