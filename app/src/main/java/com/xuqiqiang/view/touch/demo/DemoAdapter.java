@@ -19,16 +19,19 @@ public class DemoAdapter extends RecyclerView.Adapter<DemoAdapter.ViewHolder> {
 
     private List<Subject> mList;
     private Context mContext;
+    private boolean isGrid;
 
-    public DemoAdapter(Context context, List<Subject> list) {
+    public DemoAdapter(Context context, List<Subject> list, boolean isGrid) {
         this.mList = list;
         this.mContext = context;
+        this.isGrid = isGrid;
     }
 
     @NonNull
     @Override
     public DemoAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        return new ViewHolder(LayoutInflater.from(mContext).inflate(R.layout.item_grid, parent, false));
+        return new ViewHolder(LayoutInflater.from(mContext)
+                .inflate(isGrid ? R.layout.item_grid : R.layout.item_linear, parent, false));
     }
 
     @Override
@@ -48,8 +51,8 @@ public class DemoAdapter extends RecyclerView.Adapter<DemoAdapter.ViewHolder> {
 
         public ViewHolder(View itemView) {
             super(itemView);
-            tvTitle = (TextView) itemView.findViewById(R.id.tv_title);
-            ivImg = (ImageView) itemView.findViewById(R.id.iv_img);
+            tvTitle = itemView.findViewById(R.id.tv_title);
+            ivImg = itemView.findViewById(R.id.iv_img);
         }
     }
 }

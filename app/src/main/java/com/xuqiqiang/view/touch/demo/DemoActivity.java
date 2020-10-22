@@ -2,6 +2,7 @@ package com.xuqiqiang.view.touch.demo;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
@@ -9,6 +10,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.xuqiqiang.view.touch.DividerGridItemDecoration;
@@ -28,11 +30,18 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
     private View mDeleteView;
     private List<Subject> mList = new ArrayList<>();
     private RecyclerTouchHelper mRecyclerTouchHelper;
+    private boolean isGrid;
+    private boolean hasResort;
+    private boolean hasDelete;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demo);
+        Intent intent = getIntent();
+        isGrid = intent.getBooleanExtra("isGrid", false);
+        hasResort = intent.getBooleanExtra("hasResort", false);
+        hasDelete = intent.getBooleanExtra("hasDelete", false);
         initData();
         initView();
         initTouch();
@@ -48,16 +57,21 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
     private void initView() {
         mRecyclerView = findViewById(R.id.recyclerview);
         mRecyclerView.addItemDecoration(new DividerGridItemDecoration(this));
-        mRecyclerView.setLayoutManager(new GridLayoutManager(this, 4,
-                GridLayoutManager.VERTICAL, false));
-        mRecyclerView.setAdapter(new DemoAdapter(this, mList));
+        if (isGrid) {
+            mRecyclerView.setLayoutManager(new GridLayoutManager(this, 4,
+                    GridLayoutManager.VERTICAL, false));
+        } else {
+            mRecyclerView.setLayoutManager(new LinearLayoutManager(this,
+                    RecyclerView.VERTICAL, false));
+        }
+        mRecyclerView.setAdapter(new DemoAdapter(this, mList, isGrid));
     }
 
     private void initTouch() {
         mDeleteView = findViewById(R.id.ll_delete);
         mRecyclerTouchHelper = new RecyclerTouchHelper(mRecyclerView);
         // 重排序
-        mRecyclerTouchHelper.setResort(true);
+        mRecyclerTouchHelper.setResort(hasResort);
         mRecyclerTouchHelper.setAdapter(new TouchAdapter());
     }
 
@@ -78,7 +92,7 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
 
         @Override
         public View getDeleteView() {
-            return mDeleteView;
+            return hasDelete ? mDeleteView : null;
         }
 
         @Override
