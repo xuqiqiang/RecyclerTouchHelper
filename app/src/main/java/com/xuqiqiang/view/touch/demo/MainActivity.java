@@ -54,4 +54,21 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("hasDelete", true);
         startActivity(intent);
     }
+
+    public void test7(View view) {
+        Intent intent = new Intent(this, DemoActivity.class);
+        intent.putExtra("hasResort", true);
+        intent.putExtra("hasDelete", true);
+        intent.putExtra("hasHeader", true);
+        startActivity(intent);
+    }
+
+    public void test8(View view) {
+        Intent intent = new Intent(this, DemoActivity.class);
+        intent.putExtra("isGrid", true);
+        intent.putExtra("hasResort", true);
+        intent.putExtra("hasDelete", true);
+        intent.putExtra("hasHeader", true);
+        startActivity(intent);
+    }
 }

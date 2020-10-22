@@ -32,11 +32,13 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
     private static SoftReference<Toast> mToast;
     private RecyclerView mRecyclerView;
     private View mDeleteView;
+    private DemoAdapter mAdapter;
     private List<Subject> mList = new ArrayList<>();
     private RecyclerTouchHelper mRecyclerTouchHelper;
     private boolean isGrid;
     private boolean hasResort;
     private boolean hasDelete;
+    private boolean hasHeader;
 
     private static void showMessage(Context context, String message) {
         if (mToast != null) {
@@ -58,6 +60,7 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
         isGrid = intent.getBooleanExtra("isGrid", false);
         hasResort = intent.getBooleanExtra("hasResort", false);
         hasDelete = intent.getBooleanExtra("hasDelete", false);
+        hasHeader = intent.getBooleanExtra("hasHeader", false);
         initData();
         initView();
         initTouch();
@@ -80,18 +83,20 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
             mRecyclerView.setLayoutManager(new LinearLayoutManager(this,
                     RecyclerView.VERTICAL, false));
         }
-        DemoAdapter adapter = new DemoAdapter(this, mList, isGrid);
-        adapter.setOnItemClickListener(new BaseRecyclerAdapter.OnItemClickListener<Subject>() {
+        mAdapter = new DemoAdapter(mList, isGrid);
+        if (hasHeader) {
+            View header = LayoutInflater.from(this).inflate(R.layout.item_header, mRecyclerView, false);
+            mAdapter.setHeaderView(header);
+            View footer = LayoutInflater.from(this).inflate(R.layout.item_footer, mRecyclerView, false);
+            mAdapter.setFootView(footer);
+        }
+        mRecyclerView.setAdapter(mAdapter);
+        mAdapter.setOnItemClickListener(new BaseRecyclerAdapter.OnItemClickListener<Subject>() {
             @Override
             public void onItemClick(int position, Subject data) {
                 showMessage(DemoActivity.this, data.getTitle());
             }
         });
-        View header = LayoutInflater.from(this).inflate(R.layout.item_header, mRecyclerView, false);
-        adapter.setHeaderView(header);
-        View footer = LayoutInflater.from(this).inflate(R.layout.item_footer, mRecyclerView, false);
-        adapter.setFootView(footer);
-        mRecyclerView.setAdapter(adapter);
     }
 
     private void initTouch() {
@@ -116,6 +121,19 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
         public List getDataList() {
             return mList;
         }
+
+        // region 带header的列表，请务必实现这两个方法
+        @Override
+        public boolean isEnabled(RecyclerView.ViewHolder viewHolder) {
+            int position = getItemPosition(viewHolder);
+            return position >= 0 && position < mList.size();
+        }
+
+        @Override
+        public int getItemPosition(RecyclerView.ViewHolder viewHolder) {
+            return mAdapter.getRealPosition(viewHolder);
+        }
+        // endregion
 
         @Override
         public View getDeleteView() {

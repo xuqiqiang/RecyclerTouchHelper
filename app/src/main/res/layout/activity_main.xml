@@ -51,5 +51,17 @@
             android:layout_height="wrap_content"
             android:onClick="test6"
             android:text="网格排序+删除" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="test7"
+            android:text="带header的列表排序+删除" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="test8"
+            android:text="带header的网格排序+删除" />
     </LinearLayout>
 </ScrollView>
