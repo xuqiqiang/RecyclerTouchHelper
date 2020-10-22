@@ -25,9 +25,9 @@ import static android.animation.PropertyValuesHolder.ofFloat;
  */
 public class RecyclerTouchHelper {
 
+    public static final int TOUCH_MODE_DOWN = 1, TOUCH_MODE_LONG_PRESS = 2;
     private static final float TOUCH_SCALE = 1.1f;
     private static final float TOUCH_ALPHA = 0.7f;
-
     private Context mContext;
     private RecyclerView mRecyclerView;
     private ItemTouchHelper mItemTouchHelper;
@@ -36,6 +36,11 @@ public class RecyclerTouchHelper {
     private boolean mResort;
     private int mFromPosition;
     private int mCurPosition;
+    private int mFromAdapterPosition;
+    private int mCurAdapterPosition;
+    private int mTouchMode = TOUCH_MODE_LONG_PRESS;
+    private int mDragDirects = -1;
+    private int mSwipeDirects;
 
     public RecyclerTouchHelper(RecyclerView recyclerView) {
         mRecyclerView = recyclerView;
@@ -47,13 +52,14 @@ public class RecyclerTouchHelper {
 
             @Override
             public void onItemLongClick(int position, RecyclerView.ViewHolder vh) {
-                if (mAdapter != null && mAdapter.isEnabled(vh)) {
-                    mFromPosition = mAdapter.getItemPosition(vh);
-                    mCurPosition = -1;
-                    mItemTouchHelper.startDrag(vh);
-                    Vibrator vib = (Vibrator) mContext.getSystemService(Service.VIBRATOR_SERVICE);
-                    vib.vibrate(50);
-                }
+                if (mTouchMode == TOUCH_MODE_LONG_PRESS)
+                    onTouchStart(vh);
+            }
+
+            @Override
+            public void onItemTouchDown(int position, RecyclerView.ViewHolder vh) {
+                if (mTouchMode == TOUCH_MODE_DOWN)
+                    onTouchStart(vh);
             }
         });
         mItemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
@@ -62,20 +68,22 @@ public class RecyclerTouchHelper {
 
             @Override
             public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
-                int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN |
-                        ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
+                int dragFlags = mDragDirects;
+                if (dragFlags <= 0) {
+                    RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+                    dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN |
+                            ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
 
-                //noinspection StatementWithEmptyBody
-                if (layoutManager instanceof GridLayoutManager) {
-                    // ignore
-                } else if (layoutManager instanceof LinearLayoutManager) {
-                    dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
-                    if (((LinearLayoutManager) layoutManager).getOrientation() == LinearLayoutManager.HORIZONTAL)
-                        dragFlags = ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
+                    //noinspection StatementWithEmptyBody
+                    if (layoutManager instanceof GridLayoutManager) {
+                        // ignore
+                    } else if (layoutManager instanceof LinearLayoutManager) {
+                        dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+                        if (((LinearLayoutManager) layoutManager).getOrientation() == LinearLayoutManager.HORIZONTAL)
+                            dragFlags = ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
+                    }
                 }
-                int swipeFlags = 0;
-                return makeMovementFlags(dragFlags, swipeFlags);
+                return makeMovementFlags(dragFlags, mSwipeDirects);
             }
 
             @Override
@@ -86,8 +94,11 @@ public class RecyclerTouchHelper {
                     int fromPosition = mAdapter.getItemPosition(viewHolder);
                     int toPosition = mAdapter.getItemPosition(target);
                     toPosition = mAdapter.onItemMove(fromPosition, toPosition);
-                    if (toPosition >= 0)
+                    int toAdapterPosition = mAdapter.notifyItemMoved(viewHolder, target);
+                    if (toPosition >= 0) {
                         mCurPosition = toPosition;
+                        mCurAdapterPosition = toAdapterPosition;
+                    }
                 }
                 return true;
             }
@@ -106,6 +117,7 @@ public class RecyclerTouchHelper {
                 if (actionState != ItemTouchHelper.ACTION_STATE_IDLE) {
                     mSelectViewHolder = viewHolder;
                     if (mAdapter != null) {
+//                        mAdapter.positionOffset = viewHolder.getAdapterPosition() - mAdapter.getItemPosition(viewHolder);
                         if (mObjectAnimator != null && mObjectAnimator.isRunning()) {
                             mObjectAnimator.cancel();
                         }
@@ -170,8 +182,47 @@ public class RecyclerTouchHelper {
         mItemTouchHelper.attachToRecyclerView(mRecyclerView);
     }
 
+    private void onTouchStart(RecyclerView.ViewHolder vh) {
+        if (mAdapter != null && mAdapter.isEnabled(vh)) {
+            mFromPosition = mAdapter.getItemPosition(vh);
+            mFromAdapterPosition = vh.getAdapterPosition();
+            mAdapter.positionOffset = vh.getAdapterPosition() - mAdapter.getItemPosition(vh);
+            mCurPosition = -1;
+            mCurAdapterPosition = -1;
+            mItemTouchHelper.startDrag(vh);
+            Vibrator vib = (Vibrator) mContext.getSystemService(Service.VIBRATOR_SERVICE);
+            vib.vibrate(50);
+        }
+    }
+
+    /**
+     * 是否拖拽时对数据重排序
+     */
     public void setResort(boolean resort) {
         this.mResort = resort;
+    }
+
+    /**
+     * 响应拖拽的方式
+     *
+     * @param touchMode TOUCH_MODE_DOWN/TOUCH_MODE_LONG_PRESS
+     */
+    public void setTouchMode(int touchMode) {
+        this.mTouchMode = touchMode;
+    }
+
+    /**
+     * 可拖拽的方向
+     *
+     * @param dragDirects ItemTouchHelper.UP | ItemTouchHelper.DOWN | ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT
+     */
+    public void setDragDirects(int dragDirects) {
+        this.mDragDirects = dragDirects;
+    }
+
+    @Deprecated
+    public void setSwipeDirects(int swipeDirects) {
+        this.mSwipeDirects = swipeDirects;
     }
 
     public void setAdapter(Adapter adapter) {
@@ -212,46 +263,102 @@ public class RecyclerTouchHelper {
     private void restoreSequence() {
         if (mCurPosition >= 0 && mFromPosition >= 0 && mCurPosition != mFromPosition) {
             mAdapter.onItemMove(mCurPosition, mFromPosition);
+            mAdapter.notifyItemMoved(mCurAdapterPosition, mFromAdapterPosition);
         }
     }
 
     public interface OnDeleteCallback {
-        void onDelete(boolean isDelete);
+        /**
+         * 对需要删除的ViewHolder的数据处理完成后，调用onDelete刷新UI
+         *
+         * @param isDeleted 是否已删除
+         */
+        void onDelete(boolean isDeleted);
     }
 
     @SuppressWarnings("rawtypes")
     public abstract static class Adapter {
 
         private RecyclerView recyclerView;
+        private int positionOffset;
         private Handler mHandler = new Handler(Looper.getMainLooper());
 
         public abstract List getDataList();
 
+        /**
+         * 拖拽到删除的区域
+         */
         public abstract View getDeleteView();
 
+        /**
+         * 删除ViewHolder前的对数据处理的回调
+         *
+         * @param callback 对需要删除的ViewHolder的数据处理完成后，调用callback.onDelete刷新UI
+         */
         public abstract void onRequestDelete(RecyclerView.ViewHolder viewHolder, OnDeleteCallback callback);
 
+        /**
+         * 删除ViewHolder后的回调
+         */
+        public void onDeleted(RecyclerView.ViewHolder viewHolder) {
+        }
+
+        /**
+         * 是否响应拖拽
+         */
         @SuppressWarnings("unused")
         public boolean isEnabled(RecyclerView.ViewHolder viewHolder) {
             return true;
         }
 
+        /**
+         * 数据重排序后的回调事件
+         */
         public void onResort() {
         }
 
+        /**
+         * 如果你的ViewHolder中含有header或者ViewHolder列表和数据不是线性关系，请务必要实现这个方法
+         *
+         * @return ViewHolder对应数据的索引位置
+         */
         public int getItemPosition(RecyclerView.ViewHolder viewHolder) {
             return viewHolder.getAdapterPosition();
         }
 
+        /**
+         * 如果你的ViewHolder列表和数据不是线性关系，请务必要实现这个方法
+         *
+         * @return 第一个数据所在的ViewHolder的位置
+         */
+        public int getFirstPosition() {
+            return positionOffset;
+        }
+
+        /**
+         * 如果你的ViewHolder列表和数据不是线性关系，请务必要实现这个方法
+         *
+         * @return 最后一个数据所在的ViewHolder的位置
+         */
+        public int getLastPosition() {
+            return getDataList().size() - 1 + positionOffset;
+        }
+
+        /**
+         * @return ViewHolder被选中后的放大倍数
+         */
         public float getTouchScale() {
             return TOUCH_SCALE;
         }
 
+        /**
+         * @return ViewHolder被选中后的透明度
+         */
         public float getTouchAlpha() {
             return TOUCH_ALPHA;
         }
 
-        public boolean onDelete(final RecyclerView.ViewHolder viewHolder, final Runnable event) {
+        private boolean onDelete(final RecyclerView.ViewHolder viewHolder, final Runnable event) {
             final List mDataList = getDataList();
             if (Utils.isEmpty(mDataList)) return false;
             Runnable deleteEvent = new Runnable() {
@@ -264,7 +371,8 @@ public class RecyclerTouchHelper {
                             mDataList.remove(mDataList.size() - 1);
                             RecyclerView.Adapter adapter = recyclerView.getAdapter();
                             if (adapter != null)
-                                adapter.notifyItemRemoved(mDataList.size());
+                                adapter.notifyItemRemoved(getLastPosition() + 1);
+                            onDeleted(viewHolder);
                             mHandler.postDelayed(new Runnable() {
                                 @Override
                                 public void run() {
@@ -279,12 +387,16 @@ public class RecyclerTouchHelper {
                 deleteEvent.run();
             } else {
                 onItemMove(getItemPosition(viewHolder), mDataList.size() - 1);
+                notifyItemMoved(viewHolder.getAdapterPosition(), getLastPosition());
                 viewHolder.itemView.setVisibility(View.INVISIBLE);
                 mHandler.postDelayed(deleteEvent, 300);
             }
             return true;
         }
 
+        /**
+         * 数据的重排序
+         */
         public int onItemMove(int fromPosition, int toPosition) {
             List mDataList = getDataList();
             if (Utils.isEmpty(mDataList)) return -1;
@@ -306,6 +418,29 @@ public class RecyclerTouchHelper {
                     Collections.swap(mDataList, i, i - 1);
                 }
             }
+//            RecyclerView.Adapter adapter = recyclerView.getAdapter();
+//            if (adapter != null) adapter.notifyItemMoved(fromPosition, toPosition);
+            return toPosition;
+        }
+
+        public int notifyItemMoved(RecyclerView.ViewHolder fromViewHolder,
+                                   RecyclerView.ViewHolder toViewHolder) {
+            int fromAdapterPosition = fromViewHolder.getAdapterPosition();
+            int toAdapterPosition = toViewHolder.getAdapterPosition();
+
+            int firstPosition = getFirstPosition();
+            int lastPosition = getLastPosition();
+
+            if (fromAdapterPosition < firstPosition) fromAdapterPosition = firstPosition;
+            else if (fromAdapterPosition > lastPosition) fromAdapterPosition = lastPosition;
+
+            if (toAdapterPosition < firstPosition) toAdapterPosition = firstPosition;
+            else if (toAdapterPosition > lastPosition) toAdapterPosition = lastPosition;
+
+            return notifyItemMoved(fromAdapterPosition, toAdapterPosition);
+        }
+
+        public int notifyItemMoved(int fromPosition, int toPosition) {
             RecyclerView.Adapter adapter = recyclerView.getAdapter();
             if (adapter != null) adapter.notifyItemMoved(fromPosition, toPosition);
             return toPosition;
