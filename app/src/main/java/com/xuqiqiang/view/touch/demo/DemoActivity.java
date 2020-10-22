@@ -39,6 +39,7 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
     private boolean hasResort;
     private boolean hasDelete;
     private boolean hasHeader;
+    private boolean notLinear;
 
     private static void showMessage(Context context, String message) {
         if (mToast != null) {
@@ -61,6 +62,7 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
         hasResort = intent.getBooleanExtra("hasResort", false);
         hasDelete = intent.getBooleanExtra("hasDelete", false);
         hasHeader = intent.getBooleanExtra("hasHeader", false);
+        notLinear = intent.getBooleanExtra("notLinear", false);
         initData();
         initView();
         initTouch();
@@ -84,7 +86,7 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
                     RecyclerView.VERTICAL, false));
         }
 
-        mAdapter = new NotLinearAdapter(mList, isGrid);
+        mAdapter = notLinear ? new NotLinearAdapter(mList, isGrid) : new DemoAdapter(mList, isGrid);
         if (hasHeader) {
             View header = LayoutInflater.from(this).inflate(R.layout.item_header, mRecyclerView, false);
             mAdapter.setHeaderView(header);

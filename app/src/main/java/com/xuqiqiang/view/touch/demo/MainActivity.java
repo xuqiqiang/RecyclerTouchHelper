@@ -71,4 +71,21 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("hasHeader", true);
         startActivity(intent);
     }
+
+    public void test9(View view) {
+        Intent intent = new Intent(this, DemoActivity.class);
+        intent.putExtra("hasResort", true);
+        intent.putExtra("hasDelete", true);
+        intent.putExtra("notLinear", true);
+        startActivity(intent);
+    }
+
+    public void test10(View view) {
+        Intent intent = new Intent(this, DemoActivity.class);
+        intent.putExtra("isGrid", true);
+        intent.putExtra("hasResort", true);
+        intent.putExtra("hasDelete", true);
+        intent.putExtra("notLinear", true);
+        startActivity(intent);
+    }
 }
