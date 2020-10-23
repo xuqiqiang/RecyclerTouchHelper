@@ -2,7 +2,6 @@ package com.xuqiqiang.view.touch;
 
 import android.animation.ObjectAnimator;
 import android.app.Service;
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Vibrator;
@@ -28,7 +27,6 @@ public class RecyclerTouchHelper {
     public static final int TOUCH_MODE_DOWN = 1, TOUCH_MODE_LONG_PRESS = 2;
     private static final float TOUCH_SCALE = 1.1f;
     private static final float TOUCH_ALPHA = 0.7f;
-    private Context mContext;
     private RecyclerView mRecyclerView;
     private ItemTouchHelper mItemTouchHelper;
     private RecyclerView.ViewHolder mSelectViewHolder;
@@ -44,7 +42,6 @@ public class RecyclerTouchHelper {
 
     public RecyclerTouchHelper(RecyclerView recyclerView) {
         mRecyclerView = recyclerView;
-        mContext = recyclerView.getContext();
         mRecyclerView.addOnItemTouchListener(new OnRecyclerItemClickListener(mRecyclerView) {
             @Override
             public void onItemClick(int position, RecyclerView.ViewHolder vh) {
@@ -186,12 +183,11 @@ public class RecyclerTouchHelper {
         if (mAdapter != null && mAdapter.isEnabled(vh)) {
             mFromPosition = mAdapter.getItemPosition(vh);
             mFromAdapterPosition = vh.getAdapterPosition();
-            mAdapter.positionOffset = vh.getAdapterPosition() - mAdapter.getItemPosition(vh);
+            mAdapter.positionOffset = mFromAdapterPosition - mFromPosition;
             mCurPosition = -1;
             mCurAdapterPosition = -1;
             mItemTouchHelper.startDrag(vh);
-            Vibrator vib = (Vibrator) mContext.getSystemService(Service.VIBRATOR_SERVICE);
-            vib.vibrate(50);
+            mAdapter.onTouchStart(vh);
         }
     }
 
@@ -296,6 +292,14 @@ public class RecyclerTouchHelper {
          * @param callback 对需要删除的ViewHolder的数据处理完成后，调用callback.onDelete刷新UI
          */
         public abstract void onRequestDelete(RecyclerView.ViewHolder viewHolder, OnDeleteCallback callback);
+
+        /**
+         * 拖拽开始的回调
+         */
+        public void onTouchStart(RecyclerView.ViewHolder viewHolder) {
+            Vibrator vib = (Vibrator) recyclerView.getContext().getSystemService(Service.VIBRATOR_SERVICE);
+            vib.vibrate(50);
+        }
 
         /**
          * 删除ViewHolder后的回调
