@@ -3,6 +3,11 @@
 # RecyclerTouchHelper
 RecyclerView子元素拖拽功能，实现重排序和删除
 
+- 支持列表和网格的排序+删除
+- 支持带header和footer的列表和网格
+- 支持非线性排列的列表和网格
+- 可高度扩展
+
 ![Screenshot_1](https://raw.githubusercontent.com/xuqiqiang/RecyclerTouchHelper/master/images/Screenshot_1.jpg)
 
 ![Screenshot_2](https://raw.githubusercontent.com/xuqiqiang/RecyclerTouchHelper/master/images/Screenshot_2.jpg)
@@ -18,7 +23,7 @@ allprojects {
 }
 
 dependencies {
-	implementation 'com.github.xuqiqiang:RecyclerTouchHelper:1.0.4'
+	implementation 'com.github.xuqiqiang:RecyclerTouchHelper:1.0.5'
 }
 ```
 
