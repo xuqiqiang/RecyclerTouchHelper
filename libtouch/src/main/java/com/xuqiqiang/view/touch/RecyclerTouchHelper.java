@@ -22,13 +22,14 @@ import static android.animation.PropertyValuesHolder.ofFloat;
 /**
  * Created by xuqiqiang on 2020/09/07.
  */
+@SuppressWarnings("unused")
 public class RecyclerTouchHelper {
 
     public static final int TOUCH_MODE_DOWN = 1, TOUCH_MODE_LONG_PRESS = 2;
     private static final float TOUCH_SCALE = 1.1f;
     private static final float TOUCH_ALPHA = 0.7f;
-    private RecyclerView mRecyclerView;
-    private ItemTouchHelper mItemTouchHelper;
+    private final RecyclerView mRecyclerView;
+    private final ItemTouchHelper mItemTouchHelper;
     private RecyclerView.ViewHolder mSelectViewHolder;
     private Adapter mAdapter;
     private boolean mResort;
@@ -160,18 +161,23 @@ public class RecyclerTouchHelper {
             @SuppressWarnings("rawtypes")
             public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
                 super.clearView(recyclerView, viewHolder);
-                RecyclerView.Adapter adapter = mRecyclerView.getAdapter();
-                if (adapter != null) {
-                    if (mRecyclerView.isComputingLayout()) {
-                        mRecyclerView.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                RecyclerView.Adapter adapter = mRecyclerView.getAdapter();
-                                if (adapter != null) adapter.notifyDataSetChanged();
+                if (mAdapter != null) {
+                    mAdapter.onTouchEnd(viewHolder);
+                    if (mAdapter.refreshOnTouchEnd()) {
+                        RecyclerView.Adapter adapter = mRecyclerView.getAdapter();
+                        if (adapter != null) {
+                            if (mRecyclerView.isComputingLayout()) {
+                                mRecyclerView.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        RecyclerView.Adapter adapter = mRecyclerView.getAdapter();
+                                        if (adapter != null) adapter.notifyDataSetChanged();
+                                    }
+                                });
+                            } else {
+                                adapter.notifyDataSetChanged();
                             }
-                        });
-                    } else {
-                        adapter.notifyDataSetChanged();
+                        }
                     }
                 }
             }
@@ -275,23 +281,26 @@ public class RecyclerTouchHelper {
     @SuppressWarnings("rawtypes")
     public abstract static class Adapter {
 
+        private final Handler mHandler = new Handler(Looper.getMainLooper());
         private RecyclerView recyclerView;
         private int positionOffset;
-        private Handler mHandler = new Handler(Looper.getMainLooper());
 
         public abstract List getDataList();
 
         /**
          * 拖拽到删除的区域
          */
-        public abstract View getDeleteView();
+        public View getDeleteView() {
+            return null;
+        }
 
         /**
          * 删除ViewHolder前的对数据处理的回调
          *
          * @param callback 对需要删除的ViewHolder的数据处理完成后，调用callback.onDelete刷新UI
          */
-        public abstract void onRequestDelete(RecyclerView.ViewHolder viewHolder, OnDeleteCallback callback);
+        public void onRequestDelete(RecyclerView.ViewHolder viewHolder, OnDeleteCallback callback) {
+        }
 
         /**
          * 拖拽开始的回调
@@ -299,6 +308,16 @@ public class RecyclerTouchHelper {
         public void onTouchStart(RecyclerView.ViewHolder viewHolder) {
             Vibrator vib = (Vibrator) recyclerView.getContext().getSystemService(Service.VIBRATOR_SERVICE);
             vib.vibrate(50);
+        }
+
+        /**
+         * 拖拽结束的回调
+         */
+        public void onTouchEnd(RecyclerView.ViewHolder viewHolder) {
+        }
+
+        public boolean refreshOnTouchEnd() {
+            return false;
         }
 
         /**
@@ -310,7 +329,6 @@ public class RecyclerTouchHelper {
         /**
          * 是否响应拖拽
          */
-        @SuppressWarnings("unused")
         public boolean isEnabled(RecyclerView.ViewHolder viewHolder) {
             return true;
         }
@@ -422,8 +440,6 @@ public class RecyclerTouchHelper {
                     Collections.swap(mDataList, i, i - 1);
                 }
             }
-//            RecyclerView.Adapter adapter = recyclerView.getAdapter();
-//            if (adapter != null) adapter.notifyItemMoved(fromPosition, toPosition);
             return toPosition;
         }
 

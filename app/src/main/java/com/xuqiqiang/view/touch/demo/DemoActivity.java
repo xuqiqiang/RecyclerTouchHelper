@@ -166,5 +166,10 @@ public class DemoActivity extends AppCompatActivity implements TouchListener {
                     })
                     .create().show();
         }
+
+        @Override
+        public boolean refreshOnTouchEnd() {
+            return true;
+        }
     }
 }
